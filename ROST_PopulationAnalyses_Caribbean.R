@@ -14,41 +14,56 @@ library(png)
 library(gridExtra)
 library(data.table)
 
-rost=read.csv("ROST_colonycount_2.csv")
+rost=read.csv("ROST_colonycount.csv")
+
 #format data by island ("site") by year 
-rost=gather(rost, 'Year', "Count", 5:33)%>% 
+rost=gather(rost, 'Year', "Count", 5:33) %>%
   filter(is.na(Count) == FALSE)%>%
-  group_by(Year) %>%
-  summarise(yearly=)
-  rost$Year=parse_number(rost$Year) #change year from column format to row
-  rost$Count=as.numeric(rost$Count) #change count from character to numeric
-  
+           
+rost$Year=parse_number(rost$Year) #change year from column format to row
+rost$Count=as.numeric(rost$Count) #change count from character to numeric
+ 
 #filter to exclude SWPR. For now, omit Culebra as part of VI subpopulation 
 VI=filter(rost, Region %in% c("USVI", "BVI"))
-SWP=filter(rost, Region=="SWPR")
+PR=filter(rost, Region %in% c("SWPR", "Culebra"))
 USVI=filter(rost, Region=="USVI")
 BVI=filter(rost, Region=="BVI")
 
-#counts by year/region
-VI_yearly=group_by(VI, Year)
-  summarize(VI_yearly, sum(Count))
+#summarize counts by year/region for plotting purposes 
+VI_yearly=group_by(VI, Year) %>%
+  VI_yearly=summarize(VI_yearly, Sum=sum(Count))
+  plot(VI_yearly$Sum~VI_yearly$Year) #check
   
-#for whole Virgin Islands 
-rost_vi=VI%>%
+  # model population growth rate (for whole PRB) 
+  PRB_growth=rost%>%
+    group_by(Region) %>% #include if want to fit one model per population
+    do(mod=lm(Count~Year, data=.))%>%
+    tidy(mod)
+  View(PRB_growth)
+  
+ #make intercepts and slopes columns and not rows
+ PRB_growth=PRB_growth %>%
+    dplyr::select(Region, term, estimate) %>%
+    spread(term, estimate) %>%
+    ungroup()
+  
+# model population growth rate (for just VI) 
+VI_growth=VI%>%
+  #group_by(Region) %>% #include if want to fit one model per population
   do(mod=lm(Count~Year, data=.))%>%
   tidy(mod)
-View(rost_vi)
-
+  View(VI_growth)
 #make intercepts and slopes columns and not rows
-rost_vi=rost_vi %>%
-  dplyr::select(Region, term, estimate) %>%
-  spread(term, estimate) %>%
-  ungroup()
+ VI_growth=VI_growth %>%
+    dplyr::select(term, estimate) %>%
+    spread(term, estimate) %>%
+    ungroup()
 
-#theme from Our Coding Club 
-theme_marine <- function(){
+#theme
+theme_rosy <- function(){
   theme_bw() +
-    theme(axis.text = element_text(size = 16),
+    theme(axis.text.x = element_text (size=20, angle=45, vjust=1, hjust=1),
+          axis.text.y=element_text(size=20),
           axis.title = element_text(size = 20),
           axis.line.x = element_line(color="black"),
           axis.line.y = element_line(color="black"),
@@ -67,35 +82,26 @@ theme_marine <- function(){
                                            fill = "transparent",
                                            size = 2, linetype="blank"))
 }
-#plot abundance through time with a linear model fit of pop change for each populations
-#Returns point for each cay--need to figure out how to summarize 
-print(rost_vi$Year[rost_vi$Region=="VI"])
-(BVIMAP=ggplot(VI, aes(x=Year, y=Count, shape=as.factor(Region))) +
-    geom_point( fill="#76EEC6", size=4)+
-    scale_shape_manual(values=c(21, 23, 24)) +
-    geom_smooth(method = "lm", colour = "#76EEC6", fill = "#76EEC6", alpha = 0.4) +
-    labs(x = "", y = "Individuals\n", title = "VI\n") +
-    theme_marine())+
-    guides(shape=FALSE)
 
-(popcounts <- ggplot(VI, aes (x=Year, y=Count, colour=Region)) +
-    geom_point(size=2) +                                                # Changing point size
-    geom_smooth(method=lm, aes(fill=Region)) +                    # Adding a linear model fit and colour-coding by country
+#plot abundance through time with a linear model fit of pop change for each populations (if specified group by region above)
+#Returns point for each cay--need to figure out how to remove "0"
+#print(VI_growth$Year[VI_growth$Region=="VI"])
+VI=filter(VI, Count>"0")
+print(VI_growth$Year)
+(MAP=ggplot(VI, aes(x=Year, y=Count)) +
+    geom_point( fill="#76EEC6", size=4)+
+    geom_smooth(method = "lm", colour = "##0000EE", fill = "##0000EE", alpha = 0.4) +
+    labs(x = "", y = "Estimated NUmber of Breeding Pairs\n", title = "VI\n") +
+    theme_rosy())
+
+#SCatter plot figure w 95% confidence intervals on abundance data from Coding Club
+(popcounts <- ggplot(VI_yearly, aes (x=Year, y=Sum)) +
+    geom_point(size=5, colour="#3A5FCD", fill = "#3A5FCD") +                                                # Changing point size
+    geom_smooth(method = "lm", colour = "#009ACD", fill = "#009ACD", alpha = 0.4) +                    # Adding a linear model fit and colour-coding by country
     theme_bw() +
     scale_fill_manual(values = c("#EE7600", "#00868B")) +               # Adding custom colours
     scale_colour_manual(values = c("#EE7600", "#00868B"),               # Adding custom colours
                         labels=c("BVI", "USVI")) +                 # Adding labels for the legend
     ylab("Estimated Number Breeding Pairs\n") +                             
-    xlab("\nYear")  +
-    theme(axis.text.x=element_text(size=12, angle=45, vjust=1, hjust=1),       # making the years at a bit of an angle
-          axis.text.y=element_text(size=12),
-          axis.title.x=element_text(size=14, face="plain"),             
-          axis.title.y=element_text(size=14, face="plain"),             
-          panel.grid.major.x=element_blank(),                                  # Removing the background grid lines                
-          panel.grid.minor.x=element_blank(),
-          panel.grid.minor.y=element_blank(),
-          panel.grid.major.y=element_blank(),  
-          plot.margin = unit(c(1,1,1,1), units = , "cm")) +                    # Adding a 1cm margin around the plot
-    theme(legend.text = element_text(size=12, face="italic"),                  # Setting the font for the legend text
-          legend.title = element_blank(),                                      # Removing the legend title
-          legend.position=c(0.9, 0.9)))                  # Setting the position for the legend - 0 is left/bottom, 1 is top/right
+    xlab("")  +
+    theme_rosy()) 
