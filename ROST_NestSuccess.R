@@ -11,7 +11,7 @@ density=scale(cam$Density)
 age=scale(cam$AgeStart)
 colonyN=scale(cam$colonyN)
 
-#logistic exposure function for DSR modeling (Shaffer 2004), need to look into further 
+#logistic exposure function for DSR modeling on nests with differing exposure (Shaffer 2004), need to look into further 
 logexp <- function(exposure = 1) {
   linkfun <- function(mu) qlogis(mu^(1/exposure))
   linkinv <- function(eta) plogis(eta)^exposure
