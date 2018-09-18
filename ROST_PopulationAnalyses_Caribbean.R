@@ -1,14 +1,10 @@
 library(ggplot2)
-library(forecast)
 library(dplyr)
 library(tidyr)
 library(colortools)
 library(readr)
 library(broom)
 library(ggthemes)
-library(maps)
-library(rgbif)
-library(ggrepel)
 library(png)
 library(gridExtra)
 
@@ -92,7 +88,7 @@ theme_rosy <- function(){
     ggtitle("Roseate Tern Breeding Pairs in the Virgin Islands, 1993-2018") +
     scale_y_continuous(limits=c(0, 3000), breaks=seq(0, 3000, 500)) +
     scale_x_continuous(name="", limits=c(1993, 2018), breaks=seq(1993, 2018, 5))  +
-    annotate("text", x=2013, y=2000, label="yearly growth rate = -1.81", size=6)+
+    annotate("text", x=2013, y=2000, label="annual growth rate = -1.81", size=6)+
     theme_rosy()) 
 
 #SCatter plot figure w 95% confidence intervals on abundance data from USVI
@@ -100,10 +96,9 @@ theme_rosy <- function(){
     geom_point(size=5, colour="#3A5FCD", fill = "#3A5FCD") +                                                # Changing point size
     geom_smooth(method = "lm", colour = "#009ACD", fill = "#009ACD", alpha = 0.4) +                    # Adding a linear model fit and colour-coding by countr
     ylab("Nest Counts\n") + 
-    title("Roseate Tern Breeding Pairs in the Virgin Islands, 1993-2018") +
     scale_y_continuous(limits=c(0, 3000), breaks=seq(0, 3000, 500)) +
     scale_x_continuous(name="", limits=c(1988, 2018), breaks=seq(1988, 2018, 5))  +
-    annotate("text", x=2005, y=2500, label="yearly growth rate = -1.03", size=6)+
+    annotate("text", x=2010, y=2200, label="annual growth rate = -1.03", size=5)+
     theme_rosy())
 
 #SCatter plot figure w 95% confidence intervals on abundance data from BVI
@@ -112,10 +107,9 @@ theme_rosy <- function(){
     geom_smooth(method = "lm", colour = "#009ACD", fill = "#009ACD", alpha = 0.4) +                    # Adding a linear model fit and colour-coding by country
     theme_bw() +
     ylab("Nest Counts\n") + 
-    title("Roseate Tern Breeding Pairs in the Virgin Islands, 1993-2018") +
     scale_y_continuous(limits=c(0, 3000), breaks=seq(0, 3000, 500)) +
     scale_x_continuous(name="", limits=c(1993, 2018), breaks=seq(1993, 2018, 5))  +
-    annotate("text", x=2005, y=2500, label="yearly growth rate = -4.22", size=6)+
+    annotate("text", x=2010, y=2200, label="annual growth rate = -4.22", size=5)+
     theme_rosy())
 
 #Grid panel of USV and BVI pop abundance, separated 
